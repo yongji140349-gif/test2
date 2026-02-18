@@ -1,0 +1,70 @@
+import React, { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { motion } from "framer-motion";
+
+export default function ArduinoSensorChatbot() {
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState([
+    { role: "bot", text: "สวัสดี 👋 ฉันคือ Arduino Sensor Assistant พิมพ์ชื่อเซนเซอร์ที่ต้องการ เช่น DHT11, Ultrasonic, PIR" }
+  ]);
+
+  const generateResponse = (text) => {
+    text = text.toLowerCase();
+
+    if (text.includes("dht11")) {
+      return `📌 การใช้งาน DHT11\nต่อสาย:\nVCC → 5V\nGND → GND\nDATA → D2\n\nโค้ดตัวอย่าง:\n#include <DHT.h>\n#define DHTPIN 2\n#define DHTTYPE DHT11\nDHT dht(DHTPIN, DHTTYPE);\nvoid setup(){\nSerial.begin(9600);\ndht.begin();}\nvoid loop(){\nfloat t = dht.readTemperature();\nfloat h = dht.readHumidity();\nSerial.print("Temp: ");\nSerial.println(t);\ndelay(2000);}`;
+    }
+
+    if (text.includes("ultrasonic")) {
+      return `📌 การใช้งาน Ultrasonic HC-SR04\nTrig → D9\nEcho → D10\n\nโค้ดตัวอย่าง:\n#define trig 9\n#define echo 10\nvoid setup(){\nSerial.begin(9600);\npinMode(trig, OUTPUT);\npinMode(echo, INPUT);} \nvoid loop(){\ndigitalWrite(trig, LOW);\ndelayMicroseconds(2);\ndigitalWrite(trig, HIGH);\ndelayMicroseconds(10);\ndigitalWrite(trig, LOW);\nlong duration = pulseIn(echo, HIGH);\nfloat distance = duration * 0.034 / 2;\nSerial.println(distance);\ndelay(500);}`;
+    }
+
+    if (text.includes("pir")) {
+      return `📌 การใช้งาน PIR Motion Sensor\nOUT → D3\n\nโค้ดตัวอย่าง:\n#define pir 3\nvoid setup(){\nSerial.begin(9600);\npinMode(pir, INPUT);} \nvoid loop(){\nint val = digitalRead(pir);\nif(val == HIGH){\nSerial.println("Motion Detected");}\ndelay(500);}`;
+    }
+
+    return "❓ ไม่พบข้อมูลเซนเซอร์นี้ ลองพิมพ์ชื่อเช่น DHT11, Ultrasonic, PIR";
+  };
+
+  const handleSend = () => {
+    if (!input) return;
+
+    const userMessage = { role: "user", text: input };
+    const botMessage = { role: "bot", text: generateResponse(input) };
+
+    setMessages([...messages, userMessage, botMessage]);
+    setInput("");
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-6 bg-gray-50">
+      <Card className="w-full max-w-2xl shadow-xl rounded-2xl">
+        <CardContent className="p-6">
+          <h1 className="text-2xl font-bold mb-4">🤖 Arduino Sensor Chatbot</h1>
+          <div className="h-96 overflow-y-auto border rounded-xl p-4 mb-4 space-y-3">
+            {messages.map((msg, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`p-3 rounded-2xl ${msg.role === "bot" ? "bg-gray-100" : "bg-blue-100 text-right"}`}
+              >
+                <pre className="whitespace-pre-wrap text-sm">{msg.text}</pre>
+              </motion.div>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <Input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="พิมพ์ชื่อ Sensor..."
+            />
+            <Button onClick={handleSend}>ส่ง</Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
